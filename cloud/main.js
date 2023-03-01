@@ -2,7 +2,9 @@ const Product = Parse.Object.extend("Product");
 const Category = Parse.Object.extend("Category");
 
 Parse.Cloud.define("hello", (req) => {
+
 	return "Hello world from mercadinho";
+
 });
 
 Parse.Cloud.define("get-product-list", async (req) => {
@@ -63,3 +65,36 @@ Parse.Cloud.define("get-category-list", async (req) => {
         }
     });
 });
+
+Parse.Cloud.define("signup", async (req) => {
+    if(req.params.fullname == null) throw "INVALID_FULLNAME";
+    if(req.params.phone == null) throw "INVALID_PHONE";
+    if(req.params.cpf == null) throw "INVALID_CPF";
+
+    const user = new Parse.User();
+
+    user.set("username", req.params.email);
+    user.set("email", req.params.email);
+    user.set("password", req.params.password);
+    user.set("fullname", req.params.fullname);
+    user.set("phone", req.params.phone);
+    user.set("cpf", req.params.cpf);
+
+    try{
+        const resultUser = await user.signUp(null, {useMasterKey: true});
+        const userJson = resultUser.toJSON();
+
+        return {
+            id: userJson.objectId,
+            fullname: userJson.fullname,
+            email: userJson.email,
+            phone: userJson.phone,
+            cpf: userJson.cpf,
+            token: userJson.sessionToken,
+        }
+    } catch (e) {
+        throw "INVALID_DATA";
+    }
+});
+
+
