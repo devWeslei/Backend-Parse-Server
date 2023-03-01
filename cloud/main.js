@@ -1,4 +1,5 @@
 const Product = Parse.Object.extend("Product");
+const Category = Parse.Object.extend("Category");
 
 Parse.Cloud.define("hello", (req) => {
 	return "Hello world from mercadinho";
@@ -37,6 +38,21 @@ Parse.Cloud.define("get-product-list", async (req) => {
                 title: p.category.title,
                 id: p.category.objectId
             },
+        }
+    });
+});
+
+Parse.Cloud.define("get-category-list", async (req) => {
+    const queryCategories = new Parse.Query(Category);
+
+    //Condições
+
+    const resultCategories = await queryCategories.find({useMasterKey: true});
+    return resultCategories.map(function (c){
+        c = c.toJSON();
+        return {
+            title: c.title,
+            id: c.objectId
         }
     });
 });
