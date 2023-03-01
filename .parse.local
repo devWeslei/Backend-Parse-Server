@@ -1,0 +1,10 @@
+{
+  "applications": {
+    "_default": {
+      "link": "mercadinho"
+    },
+    "mercadinho": {
+      "applicationId": "3V2O1OcGW6XRqSWApi5aOFa6yUPNB1VPAsvYprus"
+    }
+  }
+}
