@@ -82,7 +82,7 @@ Parse.Cloud.define("signup", async (req) => {
 
     try{
         const resultUser = await user.signUp(null, {useMasterKey: true});
-        const userJson = resultUser.toJSON();wq
+        const userJson = resultUser.toJSON();
         return formatUser(userJson);
     } catch (e) {
         throw "INVALID_DATA";
@@ -114,6 +114,10 @@ Parse.Cloud.define("change-password", async (req) => {
     if(user.id != req.user.id) throw "INVALID_USER";
     user.set("password", req.params.newPassword);
     await user.save(null, {useMasterKey: true});
+});
+
+Parse.Cloud.define("reset-password", async (req) => {
+    await Parse.User.requestPasswordReset(req.params.email);
 });
 
 function formatUser(userJson) {
