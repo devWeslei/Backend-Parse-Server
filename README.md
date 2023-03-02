@@ -1,1 +1,1 @@
-## Virtual store's backend with Parse Server  using Flutter, back4App and Insomnia as suport.
+## Virtual store's backend with Parse Server using back4App and Insomnia as suport.
