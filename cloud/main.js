@@ -37,18 +37,7 @@ Parse.Cloud.define("get-product-list", async (req) => {
 
     return resultProducts.map(function (p) {
         p = p.toJSON();
-        return {
-            id: p.objectId,
-            title: p.title,
-            description: p.description,
-            price: p.price,
-            unit: p.unit,
-            picture: p.picture != null ? p.picture.url : null,
-            category: {
-                title: p.category.title,
-                id: p.category.objectId
-            },
-        }
+        return formatProduct(p);
     });
 });
 
@@ -158,6 +147,22 @@ Parse.Cloud.define("modify-item-quantity", async (req) => {
 
 });
 
+Parse.Cloud.define("get-cart-items", async (req) => {
+    const queryCartItems = new Parse.Query(CartItem);
+    queryCartItems.equalTo("user", req.user);
+    queryCartItems.include("product");
+    queryCartItems.include("product.category");
+    const resultCartItems = await queryCartItems.find({useMasterKey: true});
+    return resultCartItems.map(function (c) {
+        c = c.toJSON();
+        return {
+            id: c.objectId,
+            quantity: c.quantity,
+            product: formatProduct(c.product)
+        }
+    });
+});
+
 function formatUser(userJson) {
     return {
                 id: userJson.objectId,
@@ -167,6 +172,21 @@ function formatUser(userJson) {
                 cpf: userJson.cpf,
                 token: userJson.sessionToken,
             }
+}
+
+function formatProduct(productJson) {
+    return {
+        id: productJson.objectId,
+        title: productJson.title,
+        description: productJson.description,
+        price: productJson.price,
+        unit: productJson.unit,
+        picture: productJson.picture != null ? productJson.picture.url : null,
+        category: {
+            title: productJson.category.title,
+            id: productJson.category.objectId
+        },
+    };
 }
 
 
