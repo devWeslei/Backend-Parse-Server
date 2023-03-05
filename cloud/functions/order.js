@@ -1,7 +1,18 @@
+var Gerencianet = require("gn-api-sdk-node");
+
 const Order = Parse.Object.extend("Order");
 const OrderItem = Parse.Object.extend("OrderItem");
 
 const product = require("./product");
+
+var options = {
+    sandbox: true,
+    client_id: "Client_Id_a6fdf8c300d7d2d7788b555f6f792aa159bc3ee4",
+    client_secret: "Client_Secret_ac63bd6cb232b8df7d09792afadbcf705b7b3ea2",
+    certificate: "/homologacao-417192-Mercadinho-Homolog.p12",
+}
+
+const gerencianet = new Gerencianet(options);
 
 Parse.Cloud.define("checkout", async (req) => {
     if(req.user == null) throw "INVALID_USER";

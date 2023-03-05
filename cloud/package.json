@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "gn-api-sdk-node": "3.0.0"
+  }
+}
