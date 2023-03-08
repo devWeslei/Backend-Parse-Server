@@ -2,17 +2,25 @@ var Gerencianet = require("gn-api-sdk-node");
 
 const Order = Parse.Object.extend("Order");
 const OrderItem = Parse.Object.extend("OrderItem");
+const CartItem = Parse.Object.extend("CartItem");
 
 const product = require("./product");
+
 
 var options = {
     sandbox: true,
     client_id: "Client_Id_a6fdf8c300d7d2d7788b555f6f792aa159bc3ee4",
     client_secret: "Client_Secret_ac63bd6cb232b8df7d09792afadbcf705b7b3ea2",
-    certificate: "/homologacao-417192-Mercadinho-Homolog.p12",
-}
+    certificate: __dirname + "/homologacao-417192-Mercadinho - Homolog.p12",
+//    __dirname +
+};
 
-const gerencianet = new Gerencianet(options);
+var gerencianet = new Gerencianet(options);
+
+Date.prototype.addSeconds = function(s) {
+    this.setTime(this.getTime() + (s*1000));
+    return this;
+}
 
 Parse.Cloud.define("checkout", async (req) => {
     if(req.user == null) throw "INVALID_USER";
@@ -30,14 +38,24 @@ Parse.Cloud.define("checkout", async (req) => {
 
     if(req.params.total != total)throw "INVALID_TOTAL";
 
+    const dueSeconds = 3600;
+    const due = new Date().addSeconds(dueSeconds);
+
+    const charge = await createCharge(dueSeconds, req.user.get("cpf"), req.user.get("fullname"), total);
+    const qrCodeData = await generateQRCode(charge.loc.id);
+
     const order = new Order();
     order.set("total", total);
     order.set("user", req.user);
-    const savedOder = await order.save(null, {useMasterKey: true});
+    order.set("dueDate", due);
+    order.set("qrCodeImage", qrCodeData.imagemQrcode);
+    order.set("qrCode", qrCodeData.qrcode);
+    order.set("txid", charge.txid);
+    const savedOrder = await order.save(null, {useMasterKey: true});
 
     for(let item of resultCartItems){
         const orderItem = new OrderItem();
-        orderItem.set("order", savedOder);
+        orderItem.set("order", savedOrder);
         orderItem.set("user", req.user);
         orderItem.set("product", item.get("product"));
         orderItem.set("quantity", item.get("quantity"));
@@ -48,7 +66,11 @@ Parse.Cloud.define("checkout", async (req) => {
     await Parse.Object.destroyAll(resultCartItems, {useMasterKey: true});
 
     return {
-        id: savedOder.id
+        id: savedOrder.id,
+        total: total,
+        qrCodeImage: qrCodeData.imagemQrcode,
+        copiaecola: qrCodeData.qrcode,
+        due: due.toISOString(),
     }
 });
 
@@ -63,7 +85,10 @@ Parse.Cloud.define("get-orders", async (req) => {
         return {
             id: o.objectId,
             total: o.total,
-            createdAt: o.createdAt
+            createdAt: o.createdAt,
+            due: o.dueDate.iso,
+            qrCodeImage: o.qrCodeImage,
+            copiaecola: o.qrCode
         }
     });
 });
@@ -91,3 +116,31 @@ Parse.Cloud.define("get-orders-items", async (req) => {
         }
     });
 });
+
+async function createCharge(dueSeconds, cpf, fullName, price) {
+    let body = {
+    	"calendario": {
+    		"expiracao": dueSeconds,
+    	},
+    	"devedor": {
+    		"cpf": cpf.replace(/\D/g,''),
+    		"nome": fullName,
+    	},
+    	"valor": {
+    		"original": price.toFixed(2),
+    	},
+    	"chave": "weslei.t123@gmail.com",
+    }
+
+    const response = await gerencianet.pixCreateImmediateCharge([], body);
+    return response;
+}
+
+async function generateQRCode(locId){
+    let params = {
+    	id: locId,
+    }
+
+    const response = await gerencianet.pixGenerateQRCode(params);
+    return response;
+}
