@@ -3,16 +3,19 @@ var Gerencianet = require("gn-api-sdk-node");
 const Order = Parse.Object.extend("Order");
 const OrderItem = Parse.Object.extend("OrderItem");
 const CartItem = Parse.Object.extend("CartItem");
+const GnEvent = Parse.Object.extend("GnEvent");
 
 const product = require("./product");
 
 
 var options = {
-    sandbox: true,
-    client_id: "Client_Id_a6fdf8c300d7d2d7788b555f6f792aa159bc3ee4",
-    client_secret: "Client_Secret_ac63bd6cb232b8df7d09792afadbcf705b7b3ea2",
-    certificate: __dirname + "/homologacao-417192-Mercadinho - Homolog.p12",
-//    __dirname +
+    sandbox: false,
+    //client_id: "Client_Id_a6fdf8c300d7d2d7788b555f6f792aa159bc3ee4",
+    client_id: "Client_Id_6ec49f00e6bf82607bf22d45b2827e2c0409eafb",
+    //client_secret: "Client_Secret_ac63bd6cb232b8df7d09792afadbcf705b7b3ea2",
+    client_secret: "Client_Secret_625fb3d9d784869001ebf0f4b015a7f01455466c",
+    //certificate: __dirname + "/certs/homologacao-417192-Mercadinho - Homolog.p12",
+    certificate: __dirname + "/certs/producao-417192-Mercadinho.p12",
 };
 
 var gerencianet = new Gerencianet(options);
@@ -51,6 +54,7 @@ Parse.Cloud.define("checkout", async (req) => {
     order.set("qrCodeImage", qrCodeData.imagemQrcode);
     order.set("qrCode", qrCodeData.qrcode);
     order.set("txid", charge.txid);
+    order.set("status", "pending_payment");
     const savedOrder = await order.save(null, {useMasterKey: true});
 
     for(let item of resultCartItems){
@@ -71,6 +75,7 @@ Parse.Cloud.define("checkout", async (req) => {
         qrCodeImage: qrCodeData.imagemQrcode,
         copiaecola: qrCodeData.qrcode,
         due: due.toISOString(),
+        status: "pending_payment",
     }
 });
 
@@ -88,7 +93,8 @@ Parse.Cloud.define("get-orders", async (req) => {
             createdAt: o.createdAt,
             due: o.dueDate.iso,
             qrCodeImage: o.qrCodeImage,
-            copiaecola: o.qrCode
+            copiaecola: o.qrCode,
+            status: o.status,
         }
     });
 });
@@ -121,6 +127,41 @@ Parse.Cloud.define("webhook", async (req) => {
     if(req.user == null) throw "INVALID_USER";
     if(req.user.id != "t1eyAe1M5Z") throw "INVALID_USER";
     return "Ola mundo!";
+});
+
+Parse.Cloud.define("pix", async (req) => {
+    for(const e of req.params.pix) {
+        const gnEvent = new GnEvent();
+        gnEvent.set("eid", e.endToEndId);
+        gnEvent.set("txid", e.txid);
+        gnEvent.set("event", e);
+        await gnEvent.save(null, {useMasterKey: true});
+
+        const query = new Parse.Query(Order);
+        query.equalTo("txid", e.txid);
+
+        const order = await query.first({useMasterKey: true});
+        if(order == null) {
+            throw "NOT_FOUND";
+        }
+
+        order.set("status", "paid");
+        order.set("e2eId", e.endToEndId);
+
+        await order.save(null, {useMasterKey: true});
+    }
+});
+
+Parse.Cloud.define("config-webhook", async (req) => {
+    let body = {
+    	webhookUrl: "https://api.wesleidev.com.br/prod/webhook",
+    }
+
+    let params = {
+    	chave: "weslei.t123@gmail.com",
+    }
+
+    return await gerencianet.pixConfigWebhook(params, body);
 });
 
 async function createCharge(dueSeconds, cpf, fullName, price) {
