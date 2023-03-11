@@ -21,8 +21,7 @@
 
 ## Difficulties      
 -many configurations on platforms with endpoints, certificates, to link the PIX payment with the backend structure of the app.
-so I needed to read the documents, see the examples, everything slowly and very carefully.      
-
+so I needed to read the documents, see the examples, everything slowly and very carefully.  
 
 </br>
 
