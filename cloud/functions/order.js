@@ -149,6 +149,9 @@ Parse.Cloud.define("webhook", async (req) => {
 });
 
 Parse.Cloud.define("pix", async (req) => {
+    if(req.user == null) throw "INVALID_USER";
+    if(req.user.id != "t1eyAe1M5Z") throw "INVALID_USER";
+
     for(const e of req.params.pix) {
         const gnEvent = new GnEvent();
         gnEvent.set("eid", e.endToEndId);
