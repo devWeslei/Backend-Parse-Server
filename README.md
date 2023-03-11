@@ -7,14 +7,14 @@
 -PIX functionality: AWS.amazon, EFí-Gerencianet.   
 
 ## Structure      
-![structure]()
+![structure](https://github.com/devWeslei/Backend-Parse-Server/blob/main/cloud/assets/1.png)
 
 
 ## Functionalities 
 -SignUp.   
 -login.   
 -PIX payments.   
--complete structure of a virtual store like, add item, remove item, modify quantity item.
+-complete structure of a virtual store like add item, remove item, modify quantity item.
 -pay cart items.
 -refund request functionality.   
  ***hey! look out: this app's interface is being developed with Flutter.***
