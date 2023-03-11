@@ -123,6 +123,25 @@ Parse.Cloud.define("get-orders-items", async (req) => {
     });
 });
 
+Parse.Cloud.define("refund-order", async (req) => {
+    if(req.params.orderId == null) throw "INVALID_ORDER";
+
+    const queryOrder = new Parse.Query(Order);
+    let order;
+    try{
+        order = await queryOrder.get(req.params.orderId, {useMasterKey: true});
+    }catch (e) {
+        throw "INVALID_ORDER";
+    }
+
+    if(order.get("status") != "paid") throw "INVALID_STATUS";
+
+    await pixDevolution(order.get("total"), order.get("e2eId"), new Date().getTime());
+
+    order.set("status", "requested_refund");
+    await order.save(null, {useMasterKey: true});
+});
+
 Parse.Cloud.define("webhook", async (req) => {
     if(req.user == null) throw "INVALID_USER";
     if(req.user.id != "t1eyAe1M5Z") throw "INVALID_USER";
@@ -145,8 +164,16 @@ Parse.Cloud.define("pix", async (req) => {
             throw "NOT_FOUND";
         }
 
-        order.set("status", "paid");
-        order.set("e2eId", e.endToEndId);
+        if(e.devolucoes == null) {
+           order.set("status", "paid");
+           order.set("e2eId", e.endToEndId);
+        } else {
+            if(e.devolucoes[0].status == "EM_PROCESSAMENTO"){
+                order.set("status", "panding_refund");
+            } else if(e.devolucoes[0].status == "DEVOLVIDO"){
+                order.set("status", "refunded");
+            }
+        }
 
         await order.save(null, {useMasterKey: true});
     }
@@ -162,6 +189,15 @@ Parse.Cloud.define("config-webhook", async (req) => {
     }
 
     return await gerencianet.pixConfigWebhook(params, body);
+});
+
+Parse.Cloud.define("list-charges", async (req) => {
+        let params = {
+        	inicio: req.params.inicio,
+        	fim: req.params.fim,
+        }
+
+        return await gerencianet.pixListCharges(params);
 });
 
 async function createCharge(dueSeconds, cpf, fullName, price) {
@@ -190,4 +226,17 @@ async function generateQRCode(locId){
 
     const response = await gerencianet.pixGenerateQRCode(params);
     return response;
+}
+
+async function pixDevolution(value, e2eId, id) {
+    let body = {
+    	valor: value.toFixed(2),
+    }
+
+    let params = {
+    	e2eId: e2eId,
+    	id: id,
+    }
+
+    return await gerencianet.pixDevolution(params, body);
 }
