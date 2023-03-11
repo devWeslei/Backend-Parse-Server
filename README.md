@@ -1,11 +1,10 @@
-## Backend-Parse-Server   
-
-## About this Project
+# Backend-Parse-Server   
+ 
 ## Backend using      
 -Parse Server.   
 -Back4App.     
 -Insomnia.    
--PIX functionality: Gerencianet.   
+-PIX functionality: AWS.amazon, EFí-Gerencianet.   
 
 ## Structure      
 ![structure]()
