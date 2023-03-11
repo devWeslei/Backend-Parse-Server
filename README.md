@@ -14,10 +14,10 @@
 -SignUp.   
 -login.   
 -PIX payments.   
--complete structure of a virtual store like add item, remove item, modify quantity item.
--pay cart items.
--refund request functionality.   
- ***hey! look out: this app's interface is being developed with Flutter.***
+-complete structure of a virtual store like add item, remove item, modify quantity item.   
+-pay cart items.   
+-refund request functionality.      
+ ***hey! look out: this app's interface is being developed with Flutter.***   
 
 ## Difficulties      
 -many configurations on platforms with endpoints, certificates, to link the PIX payment with the backend structure of the app.
